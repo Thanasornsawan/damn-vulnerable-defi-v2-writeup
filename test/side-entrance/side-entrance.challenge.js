@@ -32,6 +32,11 @@ describe('[Challenge] Side entrance', function () {
         In the function 'flashLoan' we found vulnerability because it care only balance not owner
         and callback to the execute function outside here
         IFlashLoanEtherReceiver(msg.sender).execute{value: amount}();
+        -----
+        the IFlashLoanEtherReceiver is just interface name for use execute function from other contract
+        It make the Pool contract know how the execute function is from the interface without import all contract
+        or inherit the other contract.
+        -----
 
         So, we create 'FlashLoanEtherReceiver' contract which contain execute function for callback inside 
         flashloan function and have fallback to receive ETH as receive() when withdraw money
