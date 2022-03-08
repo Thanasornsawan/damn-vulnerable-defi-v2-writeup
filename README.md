@@ -30,7 +30,7 @@ Currently I make solutions for:
 - [x] Native receiver
 - [x] Truster
 - [x] Side entrance
-- [ ] The rewarder
+- [x] The rewarder
 - [ ] Selfie
 - [ ] Compromised
 - [ ] Puppet
