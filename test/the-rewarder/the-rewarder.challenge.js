@@ -54,7 +54,8 @@ describe('[Challenge] The rewarder', function () {
         In both cases, they affect the next block but don't mine one.
         evm_increaseTime receives a number of seconds that will be added to the timestamp of the latest block.
         evm_setNextBlockTimestamp receives an absolute UNIX timestamp (again, in seconds),
-        and so it's not affected by the current bloc
+        and so it's not affected by the current block
+        refer: https://ethereum.stackexchange.com/questions/86633/time-dependent-tests-with-hardhat
          */
         
         // Each depositor gets 25 reward tokens
