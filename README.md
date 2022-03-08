@@ -29,7 +29,7 @@ Currently I make solutions for:
 - [x] Upstoppable
 - [x] Native receiver
 - [x] Truster
-- [ ] Side entrance
+- [x] Side entrance
 - [ ] The rewarder
 - [ ] Selfie
 - [ ] Compromised
