@@ -23,7 +23,9 @@ npm install
 Run exploit follow the name of folder:
 ``` shell
 npm run truster
-``` 
+```
+
+Description writeup is in comment of each challenge.js
 
 Currently I make solutions for:
 - [x] Upstoppable
@@ -32,7 +34,7 @@ Currently I make solutions for:
 - [x] Side entrance
 - [x] The rewarder
 - [x] Selfie
-- [ ] Compromised
+- [x] Compromised
 - [ ] Puppet
 - [ ] Puppet v2
 - [ ] Free rider

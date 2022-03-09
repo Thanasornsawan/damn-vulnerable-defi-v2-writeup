@@ -14,6 +14,9 @@ contract TrustfulOracle is AccessControlEnumerable {
 
     bytes32 public constant TRUSTED_SOURCE_ROLE = keccak256("TRUSTED_SOURCE_ROLE");
     bytes32 public constant INITIALIZER_ROLE = keccak256("INITIALIZER_ROLE");
+    //It need to make constant as byte32 because 'AccessControl.sol' in openzeppelin require byte32 role 
+    //in function renounceRole(bytes32 role, address account) public virtual override {...}
+    //keccak256(bytes memory) returns (bytes32) − computes the Keccak-256 hash of the input.
 
     // Source address => (symbol => price)
     mapping(address => mapping (string => uint256)) private pricesBySource;
