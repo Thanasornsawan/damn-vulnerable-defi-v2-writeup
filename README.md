@@ -35,7 +35,7 @@ Currently I make solutions for:
 - [x] The rewarder
 - [x] Selfie
 - [x] Compromised
-- [ ] Puppet
+- [x] Puppet
 - [ ] Puppet v2
 - [ ] Free rider
 - [ ] Backdoor

