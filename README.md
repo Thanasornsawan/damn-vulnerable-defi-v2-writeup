@@ -31,7 +31,7 @@ Currently I make solutions for:
 - [x] Truster
 - [x] Side entrance
 - [x] The rewarder
-- [ ] Selfie
+- [x] Selfie
 - [ ] Compromised
 - [ ] Puppet
 - [ ] Puppet v2
