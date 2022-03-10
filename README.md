@@ -36,7 +36,7 @@ Currently I make solutions for:
 - [x] Selfie
 - [x] Compromised
 - [x] Puppet
-- [ ] Puppet v2
+- [x] Puppet v2
 - [ ] Free rider
 - [ ] Backdoor
 - [ ] Climber

