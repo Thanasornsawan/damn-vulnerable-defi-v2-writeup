@@ -37,6 +37,6 @@ Currently I make solutions for:
 - [x] Compromised
 - [x] Puppet
 - [x] Puppet v2
-- [ ] Free rider
+- [x] Free rider
 - [ ] Backdoor
 - [ ] Climber

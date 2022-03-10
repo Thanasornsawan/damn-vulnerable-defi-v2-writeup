@@ -104,7 +104,41 @@ describe('[Challenge] Free Rider', function () {
     });
 
     it('Exploit', async function () {
-        /** CODE YOUR EXPLOIT HERE */
+        /** CODE YOUR EXPLOIT HERE 
+        A new marketplace of Damn Valuable NFTs has been released! There's been an initial mint of 6 NFTs, 
+        which are available for sale in the marketplace. Each one at 15 ETH.
+        A buyer has shared with you a secret alpha: the marketplace is vulnerable
+        and all tokens can be taken. Yet the buyer doesn't know how to do it. 
+        So it's offering a payout of 45 ETH for whoever is willing to take the NFTs out and send them their way.
+        You want to build some rep with this buyer, so you've agreed with the plan.
+        Sadly you only have 0.5 ETH in balance. If only there was a place where you could get free ETH, at least for an instant.
+        ---------------
+        Uniswap v2 documentation it also offers flash loans called Flash Swaps
+        triggered by the presence of the swap function’s data parameter. 
+        The repay should happen in the uniswapV2Call callback function. 
+        Besides the above function, we have to implement another onERC721Received hook 
+        to make our contract capable of receiving ERC721 NFTs.
+        from https://docs.uniswap.org/protocol/V2/guides/smart-contract-integration/using-flash-swaps
+        ---------------
+
+        Conclusion: Now,we know that each NFT cost 15 ETH but we have only 0.5 ETH in balance.
+        We will buy all NFTs and transfer to buyer and total at the end attacker get 45 ETH.
+        We need loan from swap function in uniswap.
+        1. Get a flash loan of 15 WETH
+        2. Claim the underlying ETH from WETH.
+        3. Buy all six NFTs from the marketplace by sending the 15 ETH exploiting the bug.
+        4. Exchange back the 15 ETH to WETH and repay the flash loan.
+        5. Transfer all NFTs to the buyer to get JOB_PAYOUT 45 ETH by safeTransferFrom
+        */
+        this.exploitContract = await(await ethers.getContractFactory('FreeRiderAttacker', attacker)).deploy(
+                this.uniswapPair.address,
+                this.marketplace.address,
+                this.weth.address,
+                this.nft.address,
+                this.buyerContract.address
+          );
+
+        await this.exploitContract.connect(attacker).attack(NFT_PRICE);
     });
 
     after(async function () {
